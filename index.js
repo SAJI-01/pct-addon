@@ -19,7 +19,7 @@ process.on("uncaughtException", function(err) { console.error("UNCAUGHT EXCEPTIO
 process.on("unhandledRejection", function(err) { console.error("UNHANDLED REJECTION", err); });
 
 var cachePath = path.join(process.env.HOME || require("os").tmpdir(), "popcorn-cache.json");
-var map = {};
+var map = {};      // imdb_code -> { quality: { hash, size, type, seeds, peers } }
 try { map = JSON.parse(fs.readFileSync(cachePath).toString()); } catch(e) { console.error("non-fatal (cache)", e.message); }
 console.log("-> map has " + Object.keys(map).length + " movies");
 map.topPages = map.topPages || [];
@@ -38,16 +38,29 @@ var server = require("http").createServer(function(req, res) {
 
     if (url.startsWith("/stream/movie/")) {
         var imdb_id = url.split("/stream/movie/")[1].replace(".json", "");
-        var streams = _.map(map[imdb_id] || {}, function(infoHash, quality) {
+        var torrentMap = map[imdb_id] || {};
+        var streams = _.map(torrentMap, function(info, quality) {
+            var seeds = info.seeds || 0;
+            var size  = info.size  || "";
+            var type  = info.type  || "";
+            var seedIcon = seeds > 20 ? "🟢" : seeds > 5 ? "🟡" : "🔴";
             return {
-                infoHash: infoHash.toLowerCase(),
+                infoHash: info.hash.toLowerCase(),
                 name: "YTS",
-                title: quality,
+                title: quality + " " + type.toUpperCase() + "\n" + size + " " + seedIcon + " " + seeds + " seeds",
                 sources: [
                     "tracker:udp://tracker.opentrackr.org:1337/announce",
-                    "tracker:udp://tracker.leechers-paradise.org:6969/announce"
+                    "tracker:udp://tracker.leechers-paradise.org:6969/announce",
+                    "tracker:udp://open.stealth.si:80/announce"
                 ]
             };
+        });
+        // Sort: 2160p first, then 1080p, then 720p
+        var order = { "2160p": 0, "1080p": 1, "720p": 2 };
+        streams.sort(function(a, b) {
+            var qa = a.title.split(" ")[0];
+            var qb = b.title.split(" ")[0];
+            return (order[qa] !== undefined ? order[qa] : 9) - (order[qb] !== undefined ? order[qb] : 9);
         });
         res.writeHead(200);
         return res.end(JSON.stringify({ streams: streams }));
@@ -91,21 +104,28 @@ if (!process.env.DISABLE_IDX) sources.yts.forEach(function(url) { queue.push(url
 function indexMovie(movie) {
     if (movie && Array.isArray(movie.torrents)) movie.torrents.forEach(function(t) {
         if (!map[movie.imdb_code]) map[movie.imdb_code] = {};
-        map[movie.imdb_code][t.quality] = t.hash;
+        map[movie.imdb_code][t.quality] = {
+            hash:  t.hash,
+            size:  t.size,
+            type:  t.type,
+            seeds: t.seeds,
+            peers: t.peers
+        };
     });
 }
 
 function mapMetaToStremio(m) {
     return {
-        imdb_id: m.imdb_code,
-        name: m.title,
-        year: m.year,
-        runtime: m.runtime,
-        rating: m.rating,
-        genre: m.genres,
+        imdb_id:     m.imdb_code,
+        name:        m.title,
+        year:        m.year,
+        runtime:     m.runtime,
+        rating:      m.rating,
+        genre:       m.genres,
         description: m.summary,
-        poster: m.medium_cover_image,
-        type: "movie",
+        poster:      m.medium_cover_image,
+        background:  m.background_image,
+        type:        "movie",
         popularities: { yts: (m.torrents && m.torrents.length) ? m.torrents[0].seeds : 0 }
     };
 }
