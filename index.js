@@ -21,7 +21,7 @@ var manifest = {
         "projection.imdb_id": { "$exists": true }
     },
     "contactEmail": "JBC9090@tuta.io",
-    endpoint: "https://pct-addon-production.up.railway.app/stremio/v1/manifest.json",
+    endpoint: "https://pct-addon-production.up.railway.app",
     "background": "https://raw.githubusercontent.com/butterproject/butter-desktop/master/src/app/images/bg-header.jpg",
     sorts: [ { prop: "popularities.yts", name: "Popcorn Time", types: ["movie"] } ]
 };
@@ -91,12 +91,12 @@ var server = require("http").createServer(function(req, res) {
 
 /* COLLECT DATA
  */
-var httpOpts = { 
+var httpOpts = {
     headers: { user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.52 Chrome/28.0.1500.52 Safari/537.36" },
     json: true,
-    open_timeout: 4000,
-    timeout: 4000,
-    read_timeout: 4000
+    open_timeout: 15000,
+    timeout: 15000,
+    read_timeout: 15000
 };
 
 var ezQueue = async.queue(collector, 1);
