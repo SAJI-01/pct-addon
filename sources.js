@@ -6,5 +6,5 @@ module.exports = {
   ],
 
   // must point to /api/v2/list_movies.json
-  yts: ["https://yts.ag/api/v2/list_movies.json" /*, "http://api.torrentsapi.com/api/v2/list_movies.json"*/ ] // torrents api might not be compat
+  yts: [ "https://yts.bz/api/v2/list_movies.json" /*, "http://api.torrentsapi.com/api/v2/list_movies.json"*/ ] // torrents api might not be compat
 }

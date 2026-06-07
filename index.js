@@ -21,10 +21,20 @@ var manifest = {
         "projection.imdb_id": { "$exists": true }
     },
     "contactEmail": "JBC9090@tuta.io",
-    "endpoint": "http://pct.addons4stremio.xyz/stremioget/stremio/v1",
+    endpoint: "http://localhost:7821",
     "background": "https://raw.githubusercontent.com/butterproject/butter-desktop/master/src/app/images/bg-header.jpg",
     sorts: [ { prop: "popularities.yts", name: "Popcorn Time", types: ["movie"] } ]
 };
+
+process.on("uncaughtException", function(err) {
+    console.error("UNCAUGHT EXCEPTION");
+    console.error(err);
+});
+
+process.on("unhandledRejection", function(err) {
+    console.error("UNHANDLED REJECTION");
+    console.error(err);
+});
 
 /* SERVE DATA
  */
@@ -68,12 +78,16 @@ var addon = new stremio.Server({
     }
 }, { stremioget: true, secret: "8417fe936f0374fbd16a699668e8f3c4aa405d9f" }, manifest);
 
-var server = require("http").createServer(function (req, res) {
-    addon.middleware(req, res, function() { res.writeHead(302, {Location: manifest.endpoint+"/stremio/v1"}); res.end() }); // wire the middleware - also compatible with connect / express
-}).on("listening", function()
-{
-    console.log("Popcorn Addon listening on "+server.address().port);
-}).listen(process.env.PORT || 7821);
+var server = require("http").createServer(function(req, res) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Headers", "*");
+
+    addon.middleware(req, res, function() {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(manifest, null, 2));
+    });
+});
+
 
 /* COLLECT DATA
  */
@@ -91,30 +105,57 @@ function collector(url, next) {
     console.log("-> collecting from "+url);
     needle.get(url, httpOpts, function(err, resp, body) {
         process.nextTick(next);
-        if (err) console.error(err);
 
-        // eztv - initial - list of /shows/N
-        if (Array.isArray(body) && body[0] && typeof(body[0])=="string" && body[0].match("shows")) body.forEach(function(page) {
-            ezQueue.push(url.replace('/shows/', '/'+page));
-        });
+        if (err) {
+            console.error("Request failed:", url);
+            console.error(err.message || err);
+            return;
+        }
 
-        // eztv - shows listing
-        if (Array.isArray(body) && body[0] && body[0].tvdb_id) body.reverse().forEach(function(show) {
-            ezQueue.push(url.split('/shows')[0]+'/show/'+show._id);
-        });
+        if (!resp) {
+            console.error("No response:", url);
+            return;
+        }
 
-        // eztv - show
-        if (body && body._id && body.imdb_id && body.tvdb_id) indexShow(body);
+        try {
 
-        // yts api - initial - /v2/list_movies.json
-        if (body && body.status && body.data && body.data.movies) { 
-            body.data.movies.forEach(indexMovie);
+            // eztv - initial - list of /shows/N
+            if (Array.isArray(body) && body[0] && typeof(body[0])=="string" && body[0].match("shows")) {
+                body.forEach(function(page) {
+                    ezQueue.push(url.replace('/shows/', '/'+page));
+                });
+            }
 
-            if (body.data.page_number < 10) map.topPages[body.data.page_number] = body.data.movies.map(mapMetaToStremio);
+            // eztv - shows listing
+            if (Array.isArray(body) && body[0] && body[0].tvdb_id) {
+                body.reverse().forEach(function(show) {
+                    ezQueue.push(url.split('/shows')[0]+'/show/'+show._id);
+                });
+            }
 
-            // next page
-            if (body.data.page_number * body.data.limit < body.data.movie_count) 
-                ytsQueue.push(url.split("?")[0]+"?page="+(body.data.page_number+1));
+            // eztv - show
+            if (body && body._id && body.imdb_id && body.tvdb_id) {
+                indexShow(body);
+            }
+
+            // yts
+            if (body && body.status && body.data && body.data.movies) {
+                body.data.movies.forEach(indexMovie);
+
+                if (body.data.page_number < 10)
+                    map.topPages[body.data.page_number] =
+                        body.data.movies.map(mapMetaToStremio);
+
+                if (body.data.page_number * body.data.limit < body.data.movie_count)
+                    ytsQueue.push(
+                        url.split("?")[0] +
+                        "?page=" +
+                        (body.data.page_number + 1)
+                    );
+            }
+
+        } catch (e) {
+            console.error("Collector error:", e);
         }
     });
 }
@@ -179,3 +220,6 @@ setInterval(function() {
     console.log("-> stringifying cache took "+(Date.now()-start)+"ms for "+n+" items");
 }, 30*1000);
 
+server.listen(7821, function() {
+    console.log("Addon running at http://localhost:7821");
+});

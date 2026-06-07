@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/jbc9090/popcorn-addon"
+    "url": "http://github.com/JCB9090/pct-addon"
   },
   "keywords": [
     "eztv",
@@ -18,9 +18,9 @@
   "author": "JCB9090",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jcb9090/popcorn-addon/issues"
+    "url": "https://github.com/JCB9090/pct-addon/issues"
   },
-  "homepage": "https://github.com/jcb9090/popcorn-addon",
+  "homepage": "https://github.com/JCB9090/pct-addon",
   "dependencies": {
     "async": "^1.5.0",
     "lodash": "^3.10.1",
