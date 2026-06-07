@@ -1,8 +1,8 @@
 {
   "name": "popcorn-addon",
   "version": "1.0.0",
-  "description": "add YTS and EZTV to stremio ",
-  "main": "popcorn.js",
+  "description": "YTS addon for Stremio",
+  "main": "index.js",
   "scripts": {
     "test": "node test/*",
     "start": "node index.js"
@@ -12,8 +12,8 @@
     "url": "http://github.com/JCB9090/pct-addon"
   },
   "keywords": [
-    "eztv",
-    "yts"
+    "yts",
+    "stremio"
   ],
   "author": "JCB9090",
   "license": "MIT",
@@ -24,9 +24,6 @@
   "dependencies": {
     "async": "^1.5.0",
     "lodash": "^3.10.1",
-    "magnet-uri": "^5.1.0",
-    "needle": "^0.11.0",
-    "sift": "3.2.x",
-    "stremio-addons": "^1.19.0"
+    "needle": "^0.11.0"
   }
 }
