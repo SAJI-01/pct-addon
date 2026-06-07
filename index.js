@@ -82,6 +82,12 @@ var server = require("http").createServer(function(req, res) {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Headers", "*");
 
+    // Serve manifest directly
+    if (req.url === "/" || req.url === "/stremio/v1/manifest.json") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify(manifest, null, 2));
+    }
+
     addon.middleware(req, res, function() {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(manifest, null, 2));
