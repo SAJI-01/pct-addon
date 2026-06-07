@@ -2,7 +2,6 @@ var _ = require("lodash");
 var async = require("async");
 var needle = require("needle");
 var fs = require('fs');
-var magnet = require('magnet-uri');
 var path = require('path');
 
 var manifest = {
