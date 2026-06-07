@@ -81,17 +81,60 @@ var addon = new stremio.Server({
 var server = require("http").createServer(function(req, res) {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Headers", "*");
+    res.setHeader("Content-Type", "application/json");
 
-    // Serve manifest directly
-    if (req.url === "/" || req.url === "/stremio/v1/manifest.json") {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify(manifest, null, 2));
+    var url = req.url.split("?")[0];
+
+    // Manifest
+    if (url === "/" || url === "/stremio/v1/manifest.json") {
+        res.writeHead(200);
+        return res.end(JSON.stringify(manifest));
     }
 
-    addon.middleware(req, res, function() {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(manifest, null, 2));
-    });
+    // Stream find: /stremio/v1/stream.find.json
+    if (url === "/stremio/v1/stream.find.json") {
+        var body = "";
+        req.on("data", function(d) { body += d; });
+        req.on("end", function() {
+            try {
+                var args = JSON.parse(body);
+                var query = args.query || {};
+                var isEp = query.hasOwnProperty("season");
+                var hash = (isEp ? [query.imdb_id, query.season, query.episode] : [query.imdb_id]).join(" ");
+                var streams = _.map(map[hash] || [], function(infoHash, quality) {
+                    return {
+                        infoHash: infoHash.toLowerCase(),
+                        name: isEp ? "EZTV" : "YTS",
+                        title: quality,
+                        isFree: true,
+                        sources: [
+                            "tracker:udp://tracker.leechers-paradise.org:6969/announce",
+                            "tracker:udp://tracker.pomf.se:80/announce"
+                        ],
+                        availability: 2
+                    };
+                });
+                res.writeHead(200);
+                res.end(JSON.stringify({ result: streams }));
+            } catch(e) {
+                res.writeHead(200);
+                res.end(JSON.stringify({ result: [] }));
+            }
+        });
+        return;
+    }
+
+    // Meta find
+    if (url === "/stremio/v1/meta.find.json") {
+        var results = _.flatten(map.topPages)
+            .slice(0, 200)
+            .sort(function(b, a) { return a.popularities.yts - b.popularities.yts });
+        res.writeHead(200);
+        return res.end(JSON.stringify({ result: results }));
+    }
+
+    res.writeHead(404);
+    res.end(JSON.stringify({ error: "not found" }));
 });
 
 
