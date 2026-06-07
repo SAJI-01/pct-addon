@@ -21,7 +21,7 @@ var manifest = {
         "projection.imdb_id": { "$exists": true }
     },
     "contactEmail": "JBC9090@tuta.io",
-    endpoint: "http://localhost:7821",
+    endpoint: "https://pct-addon-production.up.railway.app/stremio/v1/manifest.json",
     "background": "https://raw.githubusercontent.com/butterproject/butter-desktop/master/src/app/images/bg-header.jpg",
     sorts: [ { prop: "popularities.yts", name: "Popcorn Time", types: ["movie"] } ]
 };
