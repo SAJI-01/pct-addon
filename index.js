@@ -220,6 +220,7 @@ setInterval(function() {
     console.log("-> stringifying cache took "+(Date.now()-start)+"ms for "+n+" items");
 }, 30*1000);
 
-server.listen(7821, function() {
-    console.log("Addon running at http://localhost:7821");
+var PORT = process.env.PORT || 7821;
+server.listen(PORT, function() {
+    console.log("Addon running at port " + PORT);
 });
