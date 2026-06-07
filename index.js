@@ -7,7 +7,7 @@ var path = require("path");
 var manifest = {
     id: "org.jcb9090.popcorn",
     version: "1.0.0",
-    name: "Popcorn Time",
+    name: "YTS",
     description: "Watch YTS Movies in Stremio",
     types: ["movie"],
     catalogs: [],

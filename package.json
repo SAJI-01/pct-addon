@@ -1,5 +1,5 @@
 {
-  "name": "popcorn-addon",
+  "name": "YTS",
   "version": "1.0.0",
   "description": "YTS streams for Stremio",
   "main": "index.js",
